@@ -33,6 +33,56 @@ class AdminerColumnsSearch{
             <input type="submit" name="resetSearchColumn" value="Reset">
             <input type='hidden' name='token' value='<?php echo  get_token(); ?>'>
         </form>
+        <p class="jsonly">
+            Search table<br>
+            <input id="filter-field" onkeyup="tablesFilterInput();" autocomplete="off">
+        <p id='tables' onmouseover='menuOver(this, event);' onmouseout='menuOut(this);'>
+        <script type="text/javascript">
+            var tablesFilterTimeout = null;
+            var tablesFilterValue = '';
+
+            function tablesFilter(){
+                var value = document.getElementById('filter-field').value.toLowerCase();
+                if (value == tablesFilterValue) {
+                    return;
+                }
+                tablesFilterValue = value;
+                if (value != '') {
+                    var reg = (value + '').replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, '\\$1');
+                    reg = new RegExp('('+ reg + ')', 'gi');
+                }
+                if (sessionStorage) {
+                    sessionStorage.setItem('adminer_tables_filter', value);
+                }
+                var tables = document.getElementById('tables').getElementsByTagName('span');
+                for (var i = 0; i < tables.length; i++) {
+                    var a = tables[i].getElementsByTagName('a')[1];
+                    var text = tables[i].getAttribute('data-table-name');
+                    if (value == '') {
+                        tables[i].className = '';
+                        a.innerHTML = text;
+                    } else {
+                        tables[i].className = (text.toLowerCase().indexOf(value) == -1 ? 'hidden' : '');
+                        a.innerHTML = text.replace(reg, '<strong>$1</strong>');
+                    }
+                }
+            }
+
+            function tablesFilterInput() {
+                window.clearTimeout(tablesFilterTimeout);
+                tablesFilterTimeout = window.setTimeout(tablesFilter, 200);
+            }
+
+            if (sessionStorage){
+                var db = document.getElementById('dbs').getElementsByTagName('select')[0];
+                db = db.options[db.selectedIndex].text;
+                if (db == sessionStorage.getItem('adminer_tables_filter_db') && sessionStorage.getItem('adminer_tables_filter')){
+                    document.getElementById('filter-field').value = sessionStorage.getItem('adminer_tables_filter');
+                    tablesFilter();
+                }
+                sessionStorage.setItem('adminer_tables_filter_db', db);
+            }
+        </script>
         <?php
         $tables = !empty($_POST['searchColumn']) ? $resultOfSearch : $tables;
         if (count($tables) > 0){
